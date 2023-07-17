@@ -21,8 +21,8 @@ def foo(data_path,label_name,dataset_names,split_train_val_test,max_len,tokenize
         return
 
     #Get datasets
-    if all(elem in np.unique(data_df["dataset"]) for elem in dataset_names):
-        Data = data_df[data_df.dataset in np.unique(dataset_names)]
+    if all([(elem in np.unique(data_df["dataset"])) for elem in dataset_names]):
+        Data = data_df[data_df.dataset.isin(np.unique(dataset_names))]
     else:
         print("You entered a non existing dataset name, please select one from",np.unique(data_df["dataset"]))
 
