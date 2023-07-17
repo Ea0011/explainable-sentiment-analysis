@@ -1,3 +1,4 @@
+from Data.Preprocessing import encodeText
 from torch.utils.data import Dataset, DataLoader
 import torch
 import pytorch_lightning as pl
@@ -24,11 +25,9 @@ class SentenceEmotionDataset(Dataset):
   __len__():
     Gets the length of the whole dataset
   """
-  def __init__(self, texts, labels, tokenizer, max_len):
+  def __init__(self, texts, labels):
     self.texts = texts
     self.labels = labels
-    self.tokenizer = tokenizer
-    self.max_len = max_len
     self.sentences = texts
   
   def __len__(self):
@@ -37,22 +36,7 @@ class SentenceEmotionDataset(Dataset):
   def __getitem__(self, item):
     text = str(self.sentences[item])
     label = self.labels[item]
-
-    
-    #Puts CLS token at the beginning of the sentece
-    #Puts eos token at the end of the sentence
-    #pad with 0s until the max length
-    #Also returns corresponding mask!
-    encoding = self.tokenizer.encode_plus(
-      text,
-      add_special_tokens=True,
-      max_length=self.max_len,
-      return_token_type_ids=False,
-      return_attention_mask=True,
-      return_tensors='pt',
-      padding='max_length',
-      truncation=True,
-    )
+    encoding = encodeText(text)
 
     return {
       'content_text': text,
@@ -105,9 +89,7 @@ class TextDataModule(pl.LightningDataModule):
     return DataLoader(self.test_set, batch_size=self.batch_size, shuffle=False, num_workers=2)
 
 
-
-
-def create_data_module(df_train, df_val, df_test, tokenizer, max_len, batch_size):
+def create_data_module(df_train, df_val, df_test, label_name, batch_size):
   """
   Creates pytorch lightning data module for training the model
   This function takes in split train/val/test datasets and prepares a data
@@ -116,9 +98,9 @@ def create_data_module(df_train, df_val, df_test, tokenizer, max_len, batch_size
   The function constructs Dataset objects out of input raw data,
   encodes the labels and creates a data module with all dataloaders.
   """
-  labels_train = df_train.broadEmo.to_numpy()
-  labels_val = df_val.broadEmo.to_numpy()
-  labels_test = df_test.broadEmo.to_numpy()
+  labels_train = df_train.loc[:,label_name].to_numpy()
+  labels_val = df_val.loc[:,label_name].to_numpy()
+  labels_test = df_test.loc[:,label_name].to_numpy()
   
   integer_encoded_train = LabelEncoder().fit_transform(labels_train)
   integer_encoded_val = LabelEncoder().fit_transform(labels_val)
@@ -127,24 +109,16 @@ def create_data_module(df_train, df_val, df_test, tokenizer, max_len, batch_size
   train_set = SentenceEmotionDataset(
     texts=df_train.sentence.to_numpy(),
     labels=integer_encoded_train,
-    tokenizer=tokenizer,
-    max_len=max_len
   )
 
   val_set = SentenceEmotionDataset(
     texts=df_val.sentence.to_numpy(),
     labels=integer_encoded_val,
-    tokenizer=tokenizer,
-    max_len=max_len
   )
 
   test_set = SentenceEmotionDataset(
     texts=df_test.sentence.to_numpy(),
     labels=integer_encoded_test,
-    tokenizer=tokenizer,
-    max_len=max_len
   )
 
-  return TextDataModule(train_set, val_set, test_set, batch_size)
-
-def constructModelInput(text)
+  return TextDataModule(train_set, val_set, test_set, batch_size) 

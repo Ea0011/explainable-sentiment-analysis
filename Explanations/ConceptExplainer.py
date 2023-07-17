@@ -1,4 +1,4 @@
-from Data.Preprocessing import TokenizerSingleton
+from Data.Preprocessing import TokenizerSingleton, encodeText
 from Model.CAVInterpretationModule import CAVInterpretationModule
 from Model.SingletonModelLoader import SingletonModelLoader
 import torch
@@ -25,19 +25,7 @@ class ConceptExplainer():
     _, self.avs = self.cavs.load_cavs(concepts)
 
   def constructModelInput(self, text):
-    tokenizer = TokenizerSingleton.getTokenizerInstance()
-
-    encoding = tokenizer.encode_plus(
-      text,
-      add_special_tokens=True,
-      max_length=128,
-      return_token_type_ids=False,
-      return_attention_mask=True,
-      return_tensors='pt',
-      padding='max_length',
-      truncation=True,
-    )
-
+    encoding = encodeText(text)
     input_ids, attention_mask = encoding['input_ids'], encoding['attention_mask']
 
     return torch.stack((input_ids, attention_mask), dim=1)

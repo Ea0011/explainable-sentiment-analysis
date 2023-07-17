@@ -5,6 +5,14 @@ from sklearn.model_selection import train_test_split
 from transformers import AutoTokenizer
 from Data.Dataset import create_data_module
 
+# Max sentence length which is understood by BERTWeet
+MAX_TEXT_LEN = 128
+
+r'''
+A singleton class which provides access to the tokenizer from BERTweet
+Tokenizer can be accessed globally and it is not reloaded each time it is
+being accessed
+'''
 class TokenizerSingleton:
     tokenizer = None
     @staticmethod
@@ -20,9 +28,43 @@ class TokenizerSingleton:
       else:
          TokenizerSingleton.tokenizer = AutoTokenizer.from_pretrained("vinai/bertweet-base", normalization=True)
 
+r'''
+Encodes the text for input to BERTweet transformer.
+Tokenizer from pre-trained BERTweet is used for encoding the sentence
+The sentence is tokenized with vocabulary used by BERTweet
+Truncation, padding to max length and handling of special tokens are done by
+the tokenizer from BERTweet
+
+---------
+Returns a hash:
+encoded['input_ids'] -> sequence with token ids for each word
+encoded['attention_mask'] -> mask which makes the model attend to only words (excludes padding)
+'''
+def encodeText(text):
+    tokenizer = TokenizerSingleton.getTokenizerInstance()
+
+    encoding = tokenizer.encode_plus(
+      text,
+      add_special_tokens=True,
+      max_length=MAX_TEXT_LEN,
+      return_token_type_ids=False,
+      return_attention_mask=True,
+      return_tensors='pt',
+      padding='max_length',
+      truncation=True,
+    )
+
+    return encoding
 
 
-def foo(data_path,label_name,dataset_names,split_train_val_test,max_len,tokenizer,batch_size,RANDOM_SEED = 5):
+def prepareData(
+    data_path,
+    label_name,
+    dataset_names,
+    split_train_val_test,
+    batch_size,
+    RANDOM_SEED = 5,
+):
 
     data_df = pd.read_csv(data_path, sep='\t')
 
@@ -38,9 +80,6 @@ def foo(data_path,label_name,dataset_names,split_train_val_test,max_len,tokenize
         Data = data_df[data_df.dataset.isin(np.unique(dataset_names))]
     else:
         print("You entered a non existing dataset name, please select one from",np.unique(data_df["dataset"]))
-
-    #Load the tokenizer --> TODO: improve this part
-    tokenizer = TokenizerSingleton.getTokenizerInstance()
 
     #TODO: Bertweet normalization?!
     #https://huggingface.co/docs/transformers/master/en/model_doc/bertweet
@@ -79,7 +118,7 @@ def foo(data_path,label_name,dataset_names,split_train_val_test,max_len,tokenize
     #--->Send the LabelEncoder from here or do that compeletly here (like inplace or new cloumn)
     #--->Save the LabelEncoder's mapping
     #--->Batchsize 32 for validation and test sets, is it better or worse
-    data_module = create_data_module(df_train, df_val, df_test, tokenizer, max_len, batch_size)
+    data_module = create_data_module(df_train, df_val, df_test, label_name, batch_size)
 
 
-    return data_module,tokenizer,classes #,Data etc.
+    return data_module,classes #,Data etc.
