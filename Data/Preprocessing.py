@@ -40,7 +40,7 @@ def create_data_module(df_train, df_val, df_test, label_name, batch_size):
 
   return TextDataModule(train_set, val_set, test_set, batch_size)
 
-def prepareData(
+def prepare_data(
     data_path,
     label_name,
     dataset_names,

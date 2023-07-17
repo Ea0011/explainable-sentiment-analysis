@@ -13,7 +13,7 @@ class SingletonModelLoader:
   models = {}
 
   @staticmethod
-  def getModelInstance(model, path=None, modelKlass=None):
+  def get_model_instance(model, path=None, modelKlass=None):
     if model not in SingletonModelLoader.models:
       SingletonModelLoader(model, path, modelKlass)
 

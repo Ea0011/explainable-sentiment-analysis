@@ -12,7 +12,7 @@ class TokenizerSingleton:
   '''
   tokenizer = None
   @staticmethod
-  def getTokenizerInstance():
+  def get_tokenizer_instance():
     if TokenizerSingleton.tokenizer == None:
       TokenizerSingleton()
     return TokenizerSingleton.tokenizer
@@ -25,7 +25,7 @@ class TokenizerSingleton:
       TokenizerSingleton.tokenizer = AutoTokenizer.from_pretrained("vinai/bertweet-base", normalization=True)
 
 
-def encodeText(text):
+def encode_text(text):
   r'''
   Encodes the text for input to BERTweet transformer.
   Tokenizer from pre-trained BERTweet is used for encoding the sentence
@@ -38,7 +38,7 @@ def encodeText(text):
   encoded['input_ids'] -> sequence with token ids for each word
   encoded['attention_mask'] -> mask which makes the model attend to only words (excludes padding)
   '''
-  tokenizer = TokenizerSingleton.getTokenizerInstance()
+  tokenizer = TokenizerSingleton.get_tokenizer_instance()
 
   encoding = tokenizer.encode_plus(
     text,

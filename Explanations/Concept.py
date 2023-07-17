@@ -1,5 +1,4 @@
-from Utils.TextProcessing import encodeText
-from captum.concept import TCAV
+from Utils.TextProcessing import encode_text
 from captum.concept import Concept
 from captum.concept._utils.data_iterator import dataset_to_dataloader
 from torch.utils.data import Dataset
@@ -12,12 +11,12 @@ import json
 nltk.download("wordnet")
 
 # Obtaining concept candidates for tCAV
-def getSynonymsAndExamples(word):
-  wordDescription = wordnet.synsets(word)
+def get_synonyms_and_examples(word):
+  word_description = wordnet.synsets(word)
   synonyms = []
   examples = []
 
-  for w in wordDescription:
+  for w in word_description:
     lemmas = w.lemmas()
     for l in lemmas:
       synonym = l.name()
@@ -48,27 +47,27 @@ class EmotionConceptContainer(Dataset):
     return len(self.texts)
 
   def __getitem__(self, item):
-    encoding = encodeText(item)
+    encoding = encode_text(item)
     return torch.stack((encoding['input_ids'].squeeze(0), encoding['attention_mask'].squeeze(0)))
 
-def assembleConceptsFromAdjectives(emotions, concepts):
+def assemble_concepts_from_adjectives(emotions, concepts):
   r'''
   This method connstructs concepts from simple adjecvtives which describe emotions and feelings
   The pro of using these concepts is that they are simpler and can be enhanced on the go
   with more samples. Plus, concepts here are completely new to the model and were not used for training.
   '''
-  captumConcepts = []
+  captum_concepts = []
   for id, emo in enumerate(emotions):
-    conceptSamplesForEmotion = concepts[emo]
-    conceptDataset = EmotionConceptContainer(conceptSamplesForEmotion, 128)
-    conceptDataLoader = dataset_to_dataloader(conceptDataset)
+    concept_samples_for_emotion = concepts[emo]
+    concept_dataset = EmotionConceptContainer(concept_samples_for_emotion, 128)
+    concept_data_loader = dataset_to_dataloader(concept_dataset)
 
-    captumConcepts.append(Concept(id=id, name=emo, data_iter=conceptDataLoader))
+    captum_concepts.append(Concept(id=id, name=emo, data_iter=concept_data_loader))
 
-  return captumConcepts
+  return captum_concepts
 
 
-def assembleConceptsFromDataset(dataset, nSamplesPerConcept=4):
+def assemble_concepts_from_dataset(dataset, n_samples_per_concept=4):
   r'''
   This method constructs concpets from full sentences from the dataset
   It include sentences that were used when training the model.
@@ -77,40 +76,40 @@ def assembleConceptsFromDataset(dataset, nSamplesPerConcept=4):
   as examples for each concept. Concpets, then are the fine grained emotions
   '''
   emotions = dataset.fineEmo.unique().tolist()
-  captumConcepts = []
+  captum_concepts = []
 
   for id, emo in enumerate(emotions):
     samples = dataset[dataset.fineEmo == emo].sentence.to_numpy()
-    conceptSamplesForEmotion = np.random.choice(samples, nSamplesPerConcept)
+    concept_samples_for_emotion = np.random.choice(samples, n_samples_per_concept)
 
-    conceptDataset = EmotionConceptContainer(conceptSamplesForEmotion, 128)
-    conceptDataLoader = dataset_to_dataloader(conceptDataset)
+    concept_dataset = EmotionConceptContainer(concept_samples_for_emotion, 128)
+    concept_data_loader = dataset_to_dataloader(concept_dataset)
 
-    captumConcepts.append(Concept(id=id, name=emo, data_iter=conceptDataLoader))
+    captum_concepts.append(Concept(id=id, name=emo, data_iter=concept_data_loader))
 
-  return captumConcepts
+  return captum_concepts
 
 
-def loadConceptsFromFile(filePath):
+def load_concepts_from_file(file_path):
   r'''
   Load concepts from a pre-saved JSON file
   Expects JSON to include a hash with keys being concept names
   and values being arrays of concept samples
   '''
-  with open(filePath, 'r') as conceptFile:
-    return json.load(conceptFile)
+  with open(file_path, 'r') as concept_file:
+    return json.load(concept_file)
 
 # Enhance concepts with some more synonyms
-def enhanceConceptsWithSynonyms(concepts):
-  newConcepts = concepts.copy()
+def enhance_concepts_with_synonyms(concepts):
+  new_concepts = concepts.copy()
 
-  for c, words in newConcepts.items():
+  for c, words in new_concepts.items():
     synonyms = []
     for w in words:
-      syns, _ = getSynonymsAndExamples(w)
+      syns, _ = get_synonyms_and_examples(w)
       synonyms.extend(syns)
     
-    newConcepts[c].extend(synonyms)
-    newConcepts[c] = np.unique(newConcepts[c]).tolist()
+    new_concepts[c].extend(synonyms)
+    new_concepts[c] = np.unique(new_concepts[c]).tolist()
 
-  return newConcepts
+  return new_concepts

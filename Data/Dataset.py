@@ -1,4 +1,4 @@
-from Utils.TextProcessing import encodeText
+from Utils.TextProcessing import encode_text
 from torch.utils.data import Dataset, DataLoader
 import torch
 import pytorch_lightning as pl
@@ -33,7 +33,7 @@ class SentenceEmotionDataset(Dataset):
   def __getitem__(self, item):
     text = str(self.sentences[item])
     label = self.labels[item]
-    encoding = encodeText(text)
+    encoding = encode_text(text)
 
     return {
       'content_text': text,

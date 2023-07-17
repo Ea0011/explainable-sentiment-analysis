@@ -1,5 +1,5 @@
-from Common.Emotions import BROAD_EMOTIONS, FINE_EMOTIONS
-from Utils.TextProcessing import TokenizerSingleton, encodeText
+from Common.Emotions import FINE_EMOTIONS
+from Utils.TextProcessing import TokenizerSingleton, encode_text
 from Model.EmoClassifier import TextClassifierModule
 from Utils.SingletonModelLoader import SingletonModelLoader
 import torch
@@ -52,11 +52,11 @@ class AttributionExplainer:
     attributions of tokens of each word through all 12 BERT layers and the tokens
   """
   def __init__(self, modelPath) -> None:
-    self.tokenizer = TokenizerSingleton.getTokenizerInstance()
-    self.model = SingletonModelLoader.getModelInstance('fine_classifier', modelPath, TextClassifierModule)
+    self.tokenizer = TokenizerSingleton.get_tokenizer_instance()
+    self.model = SingletonModelLoader.get_model_instance('fine_classifier', modelPath, TextClassifierModule)
 
-  def constructInputReferencePair(self, text):
-    encoding = encodeText(text)
+  def construct_input_reference_pair(self, text):
+    encoding = encode_text(text)
     input_ids, attention_mask = encoding['input_ids'], encoding['attention_mask']
 
     # construct reference token ids 
@@ -80,7 +80,7 @@ class AttributionExplainer:
     return prediction.softmax(dim=1)
 
   def interpret_emotion_prediction_top_k(self, text, k=3, n_steps=10):
-    input_ids, ref_input_ids, attention_mask = self.constructInputReferencePair(text)
+    input_ids, ref_input_ids, attention_mask = self.construct_input_reference_pair(text)
 
     exclude_tokens = [self.tokenizer.pad_token]
     indices = input_ids[0].detach().tolist()
@@ -137,7 +137,7 @@ class AttributionExplainer:
 
   def interpret_layer_attributions(self, text):
     layer_attrs = []
-    input_ids, ref_input_ids, attention_mask = self.constructInputReferencePair(text)
+    input_ids, ref_input_ids, attention_mask = self.construct_input_reference_pair(text)
 
     indices = input_ids[0].detach().tolist()
     all_tokens = self.tokenizer.convert_ids_to_tokens(indices)
