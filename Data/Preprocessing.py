@@ -2,60 +2,43 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from transformers import AutoTokenizer
-from Data.Dataset import create_data_module
+from Data.Dataset import SentenceEmotionDataset, TextDataModule
+from sklearn.preprocessing import LabelEncoder
 
-# Max sentence length which is understood by BERTWeet
-MAX_TEXT_LEN = 128
 
-r'''
-A singleton class which provides access to the tokenizer from BERTweet
-Tokenizer can be accessed globally and it is not reloaded each time it is
-being accessed
-'''
-class TokenizerSingleton:
-    tokenizer = None
-    @staticmethod
-    def getTokenizerInstance():
-        if TokenizerSingleton.tokenizer == None:
-            TokenizerSingleton()
-        return TokenizerSingleton.tokenizer
-    
-    def __init__(self):
-      """ Virtually private constructor. """
-      if TokenizerSingleton.tokenizer != None:
-         raise Exception("This class is a singleton!")
-      else:
-         TokenizerSingleton.tokenizer = AutoTokenizer.from_pretrained("vinai/bertweet-base", normalization=True)
+def create_data_module(df_train, df_val, df_test, label_name, batch_size):
+  """
+  Creates pytorch lightning data module for training the model
+  This function takes in split train/val/test datasets and prepares a data
+  module.
 
-r'''
-Encodes the text for input to BERTweet transformer.
-Tokenizer from pre-trained BERTweet is used for encoding the sentence
-The sentence is tokenized with vocabulary used by BERTweet
-Truncation, padding to max length and handling of special tokens are done by
-the tokenizer from BERTweet
+  The function constructs Dataset objects out of input raw data,
+  encodes the labels and creates a data module with all dataloaders.
+  """
+  labels_train = df_train.loc[:,label_name].to_numpy()
+  labels_val = df_val.loc[:,label_name].to_numpy()
+  labels_test = df_test.loc[:,label_name].to_numpy()
+  
+  integer_encoded_train = LabelEncoder().fit_transform(labels_train)
+  integer_encoded_val = LabelEncoder().fit_transform(labels_val)
+  integer_encoded_test = LabelEncoder().fit_transform(labels_test)
 
----------
-Returns a hash:
-encoded['input_ids'] -> sequence with token ids for each word
-encoded['attention_mask'] -> mask which makes the model attend to only words (excludes padding)
-'''
-def encodeText(text):
-    tokenizer = TokenizerSingleton.getTokenizerInstance()
+  train_set = SentenceEmotionDataset(
+    texts=df_train.sentence.to_numpy(),
+    labels=integer_encoded_train,
+  )
 
-    encoding = tokenizer.encode_plus(
-      text,
-      add_special_tokens=True,
-      max_length=MAX_TEXT_LEN,
-      return_token_type_ids=False,
-      return_attention_mask=True,
-      return_tensors='pt',
-      padding='max_length',
-      truncation=True,
-    )
+  val_set = SentenceEmotionDataset(
+    texts=df_val.sentence.to_numpy(),
+    labels=integer_encoded_val,
+  )
 
-    return encoding
+  test_set = SentenceEmotionDataset(
+    texts=df_test.sentence.to_numpy(),
+    labels=integer_encoded_test,
+  )
 
+  return TextDataModule(train_set, val_set, test_set, batch_size)
 
 def prepareData(
     data_path,

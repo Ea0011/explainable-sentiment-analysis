@@ -1,13 +1,13 @@
 from Model.EmoClassifier import TextClassifierModule
 
-r'''
-Overrides the forward function to accept single tensor of inputs
-This is neccessary to be able to use Captum API-s
-
-inputs[:, 0] -> input_token_ids
-inputs[:, 1] -> attention_mask
-'''
 class CAVInterpretationModule(TextClassifierModule):
+  r'''
+  Overrides the forward function to accept single tensor of inputs
+  This is neccessary to be able to use Captum API-s
+
+  inputs[:, 0] -> input_token_ids
+  inputs[:, 1] -> attention_mask
+  '''
   def forward(self, inputs):
     attention_mask = inputs[:, 1]
     token_ids = inputs[:, 0]

@@ -1,6 +1,6 @@
-from Data.Preprocessing import TokenizerSingleton, encodeText
+from Utils.TextProcessing import encodeText
 from Model.CAVInterpretationModule import CAVInterpretationModule
-from Model.SingletonModelLoader import SingletonModelLoader
+from Utils.SingletonModelLoader import SingletonModelLoader
 import torch
 from captum.attr import LayerActivation
 from captum.concept._utils.classifier import Classifier, DefaultClassifier

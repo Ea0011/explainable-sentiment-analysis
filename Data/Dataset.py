@@ -1,10 +1,7 @@
-from Data.Preprocessing import encodeText
+from Utils.TextProcessing import encodeText
 from torch.utils.data import Dataset, DataLoader
 import torch
 import pytorch_lightning as pl
-from sklearn.preprocessing import LabelEncoder
-
-
 
 
 class SentenceEmotionDataset(Dataset):
@@ -45,9 +42,6 @@ class SentenceEmotionDataset(Dataset):
       'targets': torch.tensor(label, dtype=torch.long)
     }
 
-
-
-
 class TextDataModule(pl.LightningDataModule):
   """
   TextDataModule: Takes in train/val/test datasets and prepares dataloaders for training
@@ -87,38 +81,3 @@ class TextDataModule(pl.LightningDataModule):
 
   def test_dataloader(self):
     return DataLoader(self.test_set, batch_size=self.batch_size, shuffle=False, num_workers=2)
-
-
-def create_data_module(df_train, df_val, df_test, label_name, batch_size):
-  """
-  Creates pytorch lightning data module for training the model
-  This function takes in split train/val/test datasets and prepares a data
-  module.
-
-  The function constructs Dataset objects out of input raw data,
-  encodes the labels and creates a data module with all dataloaders.
-  """
-  labels_train = df_train.loc[:,label_name].to_numpy()
-  labels_val = df_val.loc[:,label_name].to_numpy()
-  labels_test = df_test.loc[:,label_name].to_numpy()
-  
-  integer_encoded_train = LabelEncoder().fit_transform(labels_train)
-  integer_encoded_val = LabelEncoder().fit_transform(labels_val)
-  integer_encoded_test = LabelEncoder().fit_transform(labels_test)
-
-  train_set = SentenceEmotionDataset(
-    texts=df_train.sentence.to_numpy(),
-    labels=integer_encoded_train,
-  )
-
-  val_set = SentenceEmotionDataset(
-    texts=df_val.sentence.to_numpy(),
-    labels=integer_encoded_val,
-  )
-
-  test_set = SentenceEmotionDataset(
-    texts=df_test.sentence.to_numpy(),
-    labels=integer_encoded_test,
-  )
-
-  return TextDataModule(train_set, val_set, test_set, batch_size) 

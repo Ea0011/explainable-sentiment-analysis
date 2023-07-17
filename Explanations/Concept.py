@@ -1,7 +1,7 @@
-from Data.Preprocessing import TokenizerSingleton
+from Utils.TextProcessing import encodeText
 from captum.concept import TCAV
 from captum.concept import Concept
-from captum.concept._utils.data_iterator import dataset_to_dataloader, CustomIterableDataset
+from captum.concept._utils.data_iterator import dataset_to_dataloader
 from torch.utils.data import Dataset
 import torch
 import nltk
@@ -40,74 +40,63 @@ class EmotionConceptContainer(Dataset):
   __len__():
     Gets the length of the whole dataset
   """
-  def __init__(self, texts, tokenizer, max_len):
+  def __init__(self, texts, max_len):
     self.texts = texts
-    self.tokenizer = tokenizer
     self.max_len = max_len
   
   def __len__(self):
     return len(self.texts)
 
   def __getitem__(self, item):
-    encoding = self.tokenizer.encode_plus(
-      self.texts[item],
-      add_special_tokens=True,
-      max_length=self.max_len,
-      return_token_type_ids=False,
-      return_attention_mask=True,
-      return_tensors='pt',
-      padding='max_length',
-      truncation=True,
-    )
-
+    encoding = encodeText(item)
     return torch.stack((encoding['input_ids'].squeeze(0), encoding['attention_mask'].squeeze(0)))
 
-r'''
-This method connstructs concepts from simple adjecvtives which describe emotions and feelings
-The pro of using these concepts is that they are simpler and can be enhanced on the go
-with more samples. Plus, concepts here are completely new to the model and were not used for training.
-'''
 def assembleConceptsFromAdjectives(emotions, concepts):
+  r'''
+  This method connstructs concepts from simple adjecvtives which describe emotions and feelings
+  The pro of using these concepts is that they are simpler and can be enhanced on the go
+  with more samples. Plus, concepts here are completely new to the model and were not used for training.
+  '''
   captumConcepts = []
-  tokenizer = TokenizerSingleton.getTokenizerInstance()
   for id, emo in enumerate(emotions):
     conceptSamplesForEmotion = concepts[emo]
-    conceptDataset = EmotionConceptContainer(conceptSamplesForEmotion, tokenizer, 128)
+    conceptDataset = EmotionConceptContainer(conceptSamplesForEmotion, 128)
     conceptDataLoader = dataset_to_dataloader(conceptDataset)
 
     captumConcepts.append(Concept(id=id, name=emo, data_iter=conceptDataLoader))
 
   return captumConcepts
 
-r'''
-This method constructs concpets from full sentences from the dataset
-It include sentences that were used when training the model.
 
-It randomly samples n sentences for each fine grained label and uses those
-as examples for each concept. Concpets, then are the fine grained emotions
-'''
 def assembleConceptsFromDataset(dataset, nSamplesPerConcept=4):
+  r'''
+  This method constructs concpets from full sentences from the dataset
+  It include sentences that were used when training the model.
+
+  It randomly samples n sentences for each fine grained label and uses those
+  as examples for each concept. Concpets, then are the fine grained emotions
+  '''
   emotions = dataset.fineEmo.unique().tolist()
   captumConcepts = []
-  tokenizer = TokenizerSingleton.getTokenizerInstance()
 
   for id, emo in enumerate(emotions):
     samples = dataset[dataset.fineEmo == emo].sentence.to_numpy()
     conceptSamplesForEmotion = np.random.choice(samples, nSamplesPerConcept)
 
-    conceptDataset = EmotionConceptContainer(conceptSamplesForEmotion, tokenizer, 128)
+    conceptDataset = EmotionConceptContainer(conceptSamplesForEmotion, 128)
     conceptDataLoader = dataset_to_dataloader(conceptDataset)
 
     captumConcepts.append(Concept(id=id, name=emo, data_iter=conceptDataLoader))
 
   return captumConcepts
 
-r'''
-Load concepts from a pre-saved JSON file
-Expects JSON to include a hash with keys being concept names
-and values being arrays of concept samples
-'''
+
 def loadConceptsFromFile(filePath):
+  r'''
+  Load concepts from a pre-saved JSON file
+  Expects JSON to include a hash with keys being concept names
+  and values being arrays of concept samples
+  '''
   with open(filePath, 'r') as conceptFile:
     return json.load(conceptFile)
 
