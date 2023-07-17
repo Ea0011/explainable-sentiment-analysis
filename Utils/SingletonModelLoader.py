@@ -1,15 +1,15 @@
-r'''
-Class that load models from checkpoints and stores them in memory
-Stored models can be accessed without having to reload them
-globally in the application
-
-They will not be reloaded each time they are accessed
-
-modelKlass -> Class of model to be loaded
-model -> unique name to store the model under, used to retriev loaded model
-path -> path of checkpoint file of the model
-'''
 class SingletonModelLoader:
+  r'''
+  Class that load models from checkpoints and stores them in memory
+  Stored models can be accessed without having to reload them
+  globally in the application
+
+  They will not be reloaded each time they are accessed
+
+  modelKlass -> Class of model to be loaded
+  model -> unique name to store the model under, used to retriev loaded model
+  path -> path of checkpoint file of the model
+  '''
   models = {}
 
   @staticmethod

@@ -76,8 +76,11 @@ class TextClassifierModule(pl.LightningModule):
       for param in self.feature_extractor.embeddings.parameters():
         param.requires_grad = False
 
-  def forward(self, input_ids, attention_mask):
-    x = self.feature_extractor(input_ids=input_ids, attention_mask=attention_mask).pooler_output
+  def forward(self, input_ids, attention_mask, input_embeds=None):
+    x = self.feature_extractor(
+      input_ids=input_ids,
+      attention_mask=attention_mask, 
+      inputs_embeds=input_embeds).pooler_output
 
     for _, layer in enumerate(self.classifier):
       x = layer(x)
