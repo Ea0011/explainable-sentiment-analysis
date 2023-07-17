@@ -26,3 +26,8 @@ Here are some samples of concept discovery in the inputs. After building separat
 <div align="center">
   <img src="./Demo/concepts.png" height="500px" />
 </div>
+
+## Useful Resource
+
+* [Captum](https://captum.ai) is an excellent library for XAI applications. It contains easy to use API for many types of explanation techniques which can be used for deep neaural models.
+* [TCAV](https://arxiv.org/abs/1711.11279) is a method for using human readable data for concept discovery for the models.
