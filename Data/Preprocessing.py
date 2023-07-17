@@ -5,9 +5,22 @@ from sklearn.model_selection import train_test_split
 from transformers import AutoTokenizer
 from Data.Dataset import create_data_module
 
+class TokenizerSingleton:
+    tokenizer = None
+    @staticmethod
+    def getTokenizerInstance():
+        if TokenizerSingleton.tokenizer == None:
+            TokenizerSingleton()
+        return TokenizerSingleton.tokenizer
+    
+    def __init__(self):
+      """ Virtually private constructor. """
+      if TokenizerSingleton.tokenizer != None:
+         raise Exception("This class is a singleton!")
+      else:
+         TokenizerSingleton.tokenizer = AutoTokenizer.from_pretrained("vinai/bertweet-base", normalization=True)
 
 
-#Call this function either in main or inside the model, how will you design?
 
 def foo(data_path,label_name,dataset_names,split_train_val_test,max_len,tokenizer,batch_size,RANDOM_SEED = 5):
 
@@ -27,7 +40,7 @@ def foo(data_path,label_name,dataset_names,split_train_val_test,max_len,tokenize
         print("You entered a non existing dataset name, please select one from",np.unique(data_df["dataset"]))
 
     #Load the tokenizer --> TODO: improve this part
-    tokenizer = AutoTokenizer.from_pretrained("vinai/bertweet-base", normalization=True)
+    tokenizer = TokenizerSingleton.getTokenizerInstance()
 
     #TODO: Bertweet normalization?!
     #https://huggingface.co/docs/transformers/master/en/model_doc/bertweet

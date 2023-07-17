@@ -146,3 +146,5 @@ def create_data_module(df_train, df_val, df_test, tokenizer, max_len, batch_size
   )
 
   return TextDataModule(train_set, val_set, test_set, batch_size)
+
+def constructModelInput(text)
